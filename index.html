@@ -346,7 +346,7 @@ async function findTrends(niche) {
   setPhase("Structuring results...");
   const structured = await claudeCall({
     model: "claude-sonnet-4-6",
-    max_tokens: 700,
+    max_tokens: 1200,
     system: 'Convert these trend research notes into structured data. Call the submit_trends tool with exactly 4 trends, ordered by momentum (0-100) descending. Keep every field short.',
     messages: [{ role: "user", content: notes }],
     tools: [{
@@ -385,7 +385,7 @@ async function findTrends(niche) {
 async function generateIdeas(niche, trend) {
   const data = await claudeCall({
     model: "claude-sonnet-4-6",
-    max_tokens: 700,
+    max_tokens: 1500,
     system: "You are a short-form content strategist. Given a trending topic, produce 4 punchy ready-to-shoot content ideas for TikTok/Reels/Shorts, each a different angle. Call the submit_ideas tool.",
     messages: [{ role: "user", content: `Niche: ${niche}. Trend: "${trend.title}". Context: ${trend.summary}` }],
     tools: [{
@@ -557,4 +557,5 @@ function closeModal() { document.getElementById('modalOverlay').classList.remove
 </script>
 </body>
 </html>
+
 
