@@ -413,11 +413,28 @@ async function generateIdeas(niche, trend) {
     }],
     tool_choice: { type: "tool", name: "submit_ideas" },
   });
+
+  console.log("generateIdeas raw response:", data);
+
+  if (!data || !Array.isArray(data.content)) {
+    throw new Error("Unexpected API response shape. Check browser console for details.");
+  }
+
   const toolUse = data.content.find(b => b.type === "tool_use" && b.name === "submit_ideas");
-  if (toolUse) return toolUse.input.ideas;
-  const fallback = extractJSON(data.content.filter(b => b.type === "text").map(b => b.text).join("\n"));
-  if (fallback && fallback.ideas) return fallback.ideas;
-  throw new Error("Couldn't generate ideas. Try again.");
+  if (toolUse && Array.isArray(toolUse.input?.ideas) && toolUse.input.ideas.length > 0) {
+    return toolUse.input.ideas;
+  }
+
+  const textJoined = data.content.filter(b => b.type === "text").map(b => b.text).join("\n");
+  const fallback = extractJSON(textJoined);
+  if (fallback && Array.isArray(fallback.ideas) && fallback.ideas.length > 0) {
+    return fallback.ideas;
+  }
+
+  throw new Error(
+    `Couldn't get valid ideas back (stop_reason: ${data.stop_reason || "unknown"}). ` +
+    (textJoined ? `Response started with: "${textJoined.slice(0, 100)}"` : "No text or tool call in response — check console.")
+  );
 }
 
 /* ============ UI ============ */
@@ -521,6 +538,9 @@ async function openModal(trend) {
   body.innerHTML = '<div class="spinner"></div><div class="phase mf" style="text-align:center;color:var(--text-dim)">WRITING ANGLES...</div>';
   try {
     const ideas = await generateIdeas(state.niche, trend);
+    if (!Array.isArray(ideas) || ideas.length === 0) {
+      throw new Error("No ideas came back. Try clicking the trend again.");
+    }
     body.innerHTML = ideas.map(idea => `
       <div class="idea-card">
         <span class="platform mf">${escapeHtml(idea.platform)}</span>
@@ -537,3 +557,4 @@ function closeModal() { document.getElementById('modalOverlay').classList.remove
 </script>
 </body>
 </html>
+
