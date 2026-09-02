@@ -555,6 +555,68 @@ async function openModal(trend) {
 }
 function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
 </script>
+
+<!-- ICHIBITCHIC TRIAL GATE v2 (click-capture) — gates the Generate button -->
+<script>
+(function () {
+  var LIMIT    = 3;                                          // Layer 2 = 3 free tries
+  var BUY_URL  = 'https://ichibitchic.gumroad.com';          // TODO: per-tool Gumroad link
+  var KEY      = 'ichi_uses_' + location.hostname;
+  var SELECTOR = '#scanBtn';                                 // this tool's Generate button
+
+  function used()    { return parseInt(localStorage.getItem(KEY) || '0', 10) || 0; }
+  function setUsed(n){ try { localStorage.setItem(KEY, n); } catch (e) {} }
+  function left()    { return Math.max(0, LIMIT - used()); }
+  var word = LIMIT === 1 ? 'try' : 'tries';
+
+  function badge() {
+    var b = document.getElementById('ichi-badge');
+    if (!b) {
+      b = document.createElement('div');
+      b.id = 'ichi-badge';
+      b.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:2147483646;background:#111;color:#fff;font:600 12px/1 Inter,system-ui,sans-serif;padding:9px 13px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+      (document.body || document.documentElement).appendChild(b);
+    }
+    b.innerHTML = left() > 0
+      ? '✨ Free ' + word + ' left: <b style="color:#2ECC71">' + left() + '</b> / ' + LIMIT
+      : '🔒 Free ' + word + ' used — <span style="color:#E8518D">buy to unlock</span>';
+  }
+
+  function modal() {
+    if (document.getElementById('ichi-gate-modal')) return;
+    var w = document.createElement('div');
+    w.id = 'ichi-gate-modal';
+    w.innerHTML =
+      '<div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:1rem;font-family:Inter,system-ui,sans-serif">' +
+        '<div style="background:#fff;border-radius:18px;max-width:400px;width:100%;padding:2rem;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)">' +
+          '<div style="font-weight:700;color:#E8518D;font-size:.8rem;letter-spacing:.5px;margin-bottom:.6rem">ICHIBITCHIC.COM</div>' +
+          '<h2 style="font-size:1.25rem;margin:0 0 .5rem;color:#111">You’ve used your ' + LIMIT + ' free ' + word + ' ✨</h2>' +
+          '<p style="color:#555;font-size:.92rem;line-height:1.55;margin:0 0 1.3rem">Love this tool? Get the full version — unlimited use &amp; yours forever.</p>' +
+          '<a href="' + BUY_URL + '" target="_blank" rel="noopener" style="display:block;background:linear-gradient(135deg,#E8518D,#2ECC71);color:#fff;text-decoration:none;font-weight:700;padding:.85rem;border-radius:12px;margin-bottom:.6rem">Get the full version ↗</a>' +
+          '<button id="ichi-gate-close" style="background:none;border:none;color:#999;font-size:.85rem;cursor:pointer">Maybe later</button>' +
+        '</div>' +
+      '</div>';
+    (document.body || document.documentElement).appendChild(w);
+    var c = document.getElementById('ichi-gate-close');
+    if (c) c.onclick = function () { w.remove(); };
+  }
+
+  // CAPTURE-phase listener runs BEFORE the app's own click handler.
+  document.addEventListener('click', function (e) {
+    var btn = (e.target && e.target.closest) ? e.target.closest(SELECTOR) : null;
+    if (!btn) return;
+    if (used() >= LIMIT) { e.preventDefault(); e.stopImmediatePropagation(); modal(); badge(); return; }
+    setUsed(used() + 1);
+    badge();
+  }, true);
+
+  badge();
+  document.addEventListener('DOMContentLoaded', badge);
+  setTimeout(badge, 1000);
+
+  window.ichiTrialReset = function () { try { localStorage.removeItem(KEY); } catch (e) {} badge(); console.log('ichi trial reset'); };
+})();
+</script>
 </body>
 </html>
 
